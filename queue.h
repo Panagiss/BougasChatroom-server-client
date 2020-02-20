@@ -1,37 +1,37 @@
 #ifndef _QUEUE_H
 #define _QUEUE_H
 
-/*typedef int* item_type;
-
-struct node {
-
-    item_type data;
-    struct node* next;
-
-};
-typedef struct node node_t;
-*/
+typedef struct _queue* queue;
+typedef struct _client_node* client_node;
 
 //client structure 
-struct client{
+struct _client_node{
     struct sockaddr_in address;
     int sockfd;
     int uid;
     char name[30];
-    struct client * next;
+    struct _client_node * next;
 };
-typedef struct client client_t;
 
-void enqueue(client_t * client_socket);
+struct _queue{
+    struct _client_node * head;
+    struct _client_node * tail;
+    int size;
+};
 
-int dequeue(); 
+queue queue_create();
 
-int is_empty();
+void enqueue(queue, client_node);
 
-client_t * find_uid(int );
+void queue_destroy(queue);
 
-void send_msg(char*,int );
+void dequeue(queue); 
 
-void queue_remove(int uid);
+int queue_is_empty(queue);
+
+
+void send_msg(queue,char*,int);
+
+void queue_remove(queue,int);
 
 #endif

@@ -21,13 +21,12 @@
 
 
 
-//client_t *clients[MAX_CLIENTS];
 static unsigned int cl_count=0;
 static int uid=10;
 
-//pthread_t thread_pool[THREAD_POOL_SIZE];
 pthread_mutex_t mutex=PTHREAD_MUTEX_INITIALIZER;
-//pthread_cond_t con_var=PTHREAD_COND_INITIALIZER;
+queue q;
+
 
 
 void str_overwrite_stdout(){
@@ -44,15 +43,6 @@ void str_trim_nl(char * arr, int length){
     }
 }
 
-/*void send_message(char * s,int uid){
-    pthread_mutex_loc(&mutex);
-    for (int i=0;i<MAX_CLIENTS;i++){
-        if(is_empty()==0){
-        }
-    
-    pthread_mutex_unlock(&mutex);
-}
-*/
 
 /*
 void serve_client(void *client_sfd ){
@@ -119,17 +109,17 @@ void * handle_client(void *arg){
     int leave_flag=0;
     cl_count++;
 
-    client_t * cli=(client_t*)arg;
+    client_node cli=(client_node)arg;
 
     //get name
-    if(recv(cli->sockfd,name,MAX_NAME_LEN,0)<=0||strlen(name)<2||strlen(name)>=MAX_NAME_LEN-1 ){
+    if(recv(cli->sockfd,name,MAX_NAME_LEN,0)<=0 || strlen(name)<2 || strlen(name)>= MAX_NAME_LEN-1 ){
         printf("Enter the name correctly\n");
         leave_flag=1;
     }else{
         strcpy(cli->name,name);
         sprintf(buffer,"%s has joined\n",cli->name);
         printf("%s",buffer);
-        send_msg(buffer,cli->uid);
+        send_msg(q,buffer,cli->uid);
     }
     bzero(buffer,MAX_BUFF);
 
@@ -141,14 +131,22 @@ void * handle_client(void *arg){
         int receive=recv(cli->sockfd,buffer,MAX_BUFF,0);
         if(receive>0){
             if(strlen(buffer)>0){
-                send_msg(buffer,cli->uid);
+
+                pthread_mutex_lock(&mutex);
+                send_msg(q,buffer,cli->uid);
+                pthread_mutex_unlock(&mutex);
+
                 str_trim_nl(buffer,strlen(buffer));
-                printf("%s -> %s",buffer,cli->name);
+                printf("%s -> %s\n",buffer,cli->name);
             }
         }else if(receive ==0||strcmp(buffer,"exit")==0){
             sprintf(buffer,"%s has left\n",cli->name);
             printf("%s\n",buffer);
-            send_msg(buffer,cli->uid);
+
+            pthread_mutex_lock(&mutex);
+            send_msg(q,buffer,cli->uid);
+            pthread_mutex_unlock(&mutex);
+
             leave_flag=1;
         }else{
             printf("ERROR: -1\n");
@@ -159,7 +157,7 @@ void * handle_client(void *arg){
     }
     close(cli->sockfd);
     pthread_mutex_lock(&mutex);
-    queue_remove(cli->uid);
+    queue_remove(q,cli->uid);
     pthread_mutex_unlock(&mutex);
     cl_count--;
     pthread_detach(pthread_self());
@@ -172,6 +170,13 @@ void * handle_client(void *arg){
 //MAIN
 int main(int argc, char *argv[])
 {
+
+    if (argc < 2)       
+    {
+        fprintf(stderr, "(!)No port provided\n");
+        exit(1);
+    }
+
     //signals
     signal(SIGPIPE,SIG_IGN);
 
@@ -182,18 +187,8 @@ int main(int argc, char *argv[])
     struct sockaddr_in serv_addr, cli_addr;
     char str[INET_ADDRSTRLEN];
     pthread_t tid;
-    
-
-    /*for(int tp=0;tp<THREAD_POOL_SIZE;tp++){
-        pthread_create(&thread_pool[tp],NULL,thread_function,NULL);
-    }
-    */
-
-    if (argc < 2)       
-    {
-        fprintf(stderr, "(!)No port provided\n");
-        exit(1);
-    }
+    q=queue_create();
+   
 
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0){
@@ -237,28 +232,23 @@ int main(int argc, char *argv[])
             close(client_sockfd);
             perror("(!)ERROR on accept");
         }
-        //client setting
-        client_t *pclient=(client_t*)malloc(sizeof(client_t));
+
+        //Client Settings
+        client_node pclient=(client_node)malloc(sizeof(struct _client_node));
         pclient->address=cli_addr;
         pclient->sockfd=client_sockfd;
         pclient->uid=uid++;
-        //*pclient=client_sockfd;
 
-        //add client to queue
+        //add Client to Queue
         pthread_mutex_lock(&mutex);
-        enqueue(pclient);
+        enqueue(q,pclient);
         pthread_mutex_unlock(&mutex);
+
+        //Create Thread
         pthread_create(&tid,NULL,&handle_client,(void*)pclient);
 
         //reduce CPU usage
         sleep(1);
-
-        /*pthread_mutex_lock(&mutex); //safe enqueue with mutex 
-        enqueue(pclient);
-        pthread_cond_signal(&con_var);  //signal to the thread waitting, to resume and continue execution
-        pthread_mutex_unlock(&mutex);
-        */
-
 
     }
     

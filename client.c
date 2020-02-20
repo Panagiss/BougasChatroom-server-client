@@ -38,7 +38,7 @@ void error(const char *msg)
 
 
 void str_overwrite_stdout(){
-    printf("\r%s","> ");
+    printf("\r%s", "> ");
     fflush(stdout);
 }
 
@@ -61,10 +61,10 @@ void recv_msg_handler(){
     while(1){
        int receive= recv(sockfd,message,MAX_BUFF,0); 
        if(receive >0){
-          printf("%s",message);
-          str_overwrite_stdout();
+            printf("%s \n",message);
+            str_overwrite_stdout();
        }else if(receive==0){
-           break;
+            break;
        }
        bzero(message,MAX_BUFF);
     }
@@ -85,7 +85,7 @@ void send_msg_handler(){
             send(sockfd,message,strlen(message),0);
         }
         bzero(buffer,MAX_BUFF);
-        bzero(message,MAX_BUFF);
+        bzero(message,MAX_BUFF+MAX_NAME_LEN);
     }
     signalhandler(2);
 }
@@ -189,7 +189,7 @@ int main(int argc, char *argv[])
     }
 
     pthread_t recv_msg_thread;
-    if(pthread_create(&send_msg_thread,NULL,(void*)recv_msg_handler,NULL) != 0){
+    if(pthread_create(&recv_msg_thread,NULL,(void*)recv_msg_handler,NULL) != 0){
         error("ERROR: pthread\n");
     }
 
