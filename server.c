@@ -44,63 +44,7 @@ void str_trim_nl(char * arr, int length){
 }
 
 
-/*
-void serve_client(void *client_sfd ){
-    int client_socket = *( (int*)client_sfd);
-    free(client_sfd);
-    char t_buffer[MAX_BUFF];
-    int n;
 
-    while(1){
-        n = read(client_socket, t_buffer, MAX_BUFF-1);
-        if (n < 0){
-            perror("(!)Invalid Input from Client\n");
-            pthread_exit(NULL);
-        } 
-        if(strstr(t_buffer, "exit") != NULL){
-            printf("(!)Connection to Client Closed\n");
-            n=write(client_socket,"exit",MAX_BUFF-1);
-            if (n < 0){
-                perror("(!)ERROR writing to socket");
-                pthread_exit(NULL);
-            }
-
-            pthread_exit(NULL);
-        }
-
-        printf("%s\n",t_buffer);
-        bzero(t_buffer,MAX_BUFF);
-
-        n=write(client_socket,"Message Received",MAX_BUFF-1);
-        if (n < 0){
-            perror("(!)ERROR writing to socket");
-            pthread_exit(NULL);
-        }
-
-    }
-
-}
-
-void * thread_function(void * arg){
-    while(1){
-        int* pclient;
-        pthread_mutex_lock(&mutex); //safe dequeue with mutex
-
-        if( (pclient=dequeue() ) == NULL){
-            pthread_cond_wait(&con_var,&mutex);  //condition variable to pause the thread, until a signal comes
-            pclient=dequeue(); //try again
-        }
-        
-
-        pthread_mutex_unlock(&mutex);
-
-        if(pclient!=NULL){ 
-            serve_client(pclient); //here we serve the client
-        }
-
-    }
-}
-*/
 
 
 void * handle_client(void *arg){
@@ -137,7 +81,7 @@ void * handle_client(void *arg){
                 pthread_mutex_unlock(&mutex);
 
                 str_trim_nl(buffer,strlen(buffer));
-                printf("%s -> %s\n",buffer,cli->name);
+                printf("%s\n",buffer);
             }
         }else if(receive ==0||strcmp(buffer,"exit")==0){
             sprintf(buffer,"%s has left\n",cli->name);
@@ -217,10 +161,9 @@ int main(int argc, char *argv[])
 	}else{
 		printf("(!)Error in binding.\n");
 	}
-    //pthread_t tid[MAX_CLIENTS];
     int t_counter=0;
 
-    printf("=== WELCOME TO THE CHATROOM ===\n");
+    printf("=== SERVER INITIALIZING CHATROOM ===\n");
     
     while (1)
     {  
@@ -256,5 +199,3 @@ int main(int argc, char *argv[])
     close(sockfd);
     return EXIT_SUCCESS;
 }
-
-

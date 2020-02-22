@@ -24,18 +24,6 @@ void error(const char *msg)
     exit(EXIT_FAILURE);
 }
 
-/*void erase_newline(char *buff){
-    int p=0;
-    while (p<MAX_BUFF){
-        if(buff[p] =='\n' ){
-            buff[p]='\0';
-            break;
-        }
-        p++;
-    } 
-}
-*/
-
 
 void str_overwrite_stdout(){
     printf("\r%s", "> ");
@@ -55,13 +43,35 @@ void signalhandler(){
     flag=1;
 }
 
+/*void welcome(){
+    char msg[12][150];
+    strcpy(msg[0],"$$$$$$$\                                                           $$$$$$\  $$\                  $$\     $$$$$$$\                                    ");
+    strcpy(msg[1],"$$  __$$\                                                         $$  __$$\ $$ |                 $$ |    $$  __$$\                                   ");
+    strcpy(msg[2],"$$ |  $$ | $$$$$$\  $$\   $$\  $$$$$$\   $$$$$$\   $$$$$$$\       $$ /  \__|$$$$$$$\   $$$$$$\ $$$$$$\   $$ |  $$ | $$$$$$\   $$$$$$\  $$$$$$\$$$$\  ");
+    strcpy(msg[3],"$$$$$$$\ |$$  __$$\ $$ |  $$ |$$  __$$\  \____$$\ $$  _____|      $$ |      $$  __$$\  \____$$\\_$$  _|  $$$$$$$  |$$  __$$\ $$  __$$\ $$  _$$  _$$\ ");
+    strcpy(msg[4],"$$  __$$\ $$ /  $$ |$$ |  $$ |$$ /  $$ | $$$$$$$ |\$$$$$$\        $$ |      $$ |  $$ | $$$$$$$ | $$ |    $$  __$$< $$ /  $$ |$$ /  $$ |$$ / $$ / $$ |");
+    strcpy(msg[5],"$$ |  $$ |$$ |  $$ |$$ |  $$ |$$ |  $$ |$$  __$$ | \____$$\       $$ |  $$\ $$ |  $$ |$$  __$$ | $$ |$$\ $$ |  $$ |$$ |  $$ |$$ |  $$ |$$ | $$ | $$ |");
+    strcpy(msg[6],"$$$$$$$  |\$$$$$$  |\$$$$$$  |\$$$$$$$ |\$$$$$$$ |$$$$$$$  |      \$$$$$$  |$$ |  $$ |\$$$$$$$ | \$$$$  |$$ |  $$ |\$$$$$$  |\$$$$$$  |$$ | $$ | $$ |");
+    strcpy(msg[7],"\_______/  \______/  \______/  \____$$ | \_______|\_______/        \______/ \__|  \__| \_______|  \____/ \__|  \__| \______/  \______/ \__| \__| \__|");
+    strcpy(msg[8],"                              $$\   $$ |                                                                                                             ");
+    strcpy(msg[9],"                              \$$$$$$  |                                                                                                             ");
+    strcpy(msg[10],"                               \______/                                                                                                              ");
+    strcpy(msg[11],"\0");
+    for(int i=0;i<12;i++){
+        printf("\n%s\n",msg[i]);
+    }
+
+}
+*/
+
+
 
 void recv_msg_handler(){
     char message[MAX_BUFF]={};
     while(1){
        int receive= recv(sockfd,message,MAX_BUFF,0); 
        if(receive >0){
-            printf("%s \n",message);
+            printf("%*s <\n",78,message);
             str_overwrite_stdout();
        }else if(receive==0){
             break;
@@ -148,40 +158,11 @@ int main(int argc, char *argv[])
     }
 
 
-    /*printf("<+>Insert The 4-PIN Number for Validation: ");
-
-    
-    //send PIN back to server
-    //bzero(buffer, 256);
-    fgets(buffer,255,stdin);
-    //fflush(stdin);
-
-    n=write(sockfd,buffer,MAX_BUFF-1);
-    if (n < 0){
-        error("<!>ERROR writing to socket");
-    } 
-    //fflush(stdout);
-    bzero(buffer, MAX_BUFF);
-    //fflush(stdin);
-    //take server response 
-    char a;
-    n=read(sockfd,&a,1);
-    if (n < 0){
-        error("<!>ERROR reading from socket");    
-    } 
-
-    if(atoi(&a)==0){
-        printf("<+>Access Granted\n\n");
-    }else{
-        printf("<!>Wrong Code, Access Denied from Server\n");
-        exit(1);
-    }
-    */ 
-
     //send the name to server
     send(sockfd,name,MAX_NAME_LEN,0);
 
     printf("=== WELCOME TO THE CHATROOM ===\n");
+    //welcome();
 
     pthread_t send_msg_thread;
     if(pthread_create(&send_msg_thread,NULL,(void*)send_msg_handler,NULL) != 0){
@@ -194,11 +175,6 @@ int main(int argc, char *argv[])
     }
 
 
-    /*if (inet_ntop(AF_INET, &serv_addr.sin_addr, str,INET_ADDRSTRLEN) == NULL) {
-        fprintf(stderr, "<!>Could not convert byte to address\n");
-        exit(1);
-    }
-    */
 
     while (1)
     {
@@ -207,42 +183,6 @@ int main(int argc, char *argv[])
             break;
         }
 
-
-        /*
-        printf("%s_> ",str);
-        fflush(stdout);
-        
-        bzero(buffer, MAX_BUFF);
-        fflush(stdin);
-        fgets(buffer,MAX_BUFF-1,stdin);
-        buffer[strcspn(buffer, "\n")] = 0;
-
-        n = send(sockfd, buffer, MAX_BUFF-1,0);
-        if (n < 0){
-            error("<!>ERROR writing to socket");
-        }
-        if (n == 0){
-            printf("<!>Connection Lost\n");
-            exit(-1);        
-        }
-        bzero(buffer, MAX_BUFF);
-        n = recv(sockfd, buffer, MAX_BUFF-1,0);
-        if (n < 0){
-            error("<!>ERROR reading from socket");
-        }
-        if (n == 0){
-            printf("<!>Connection Lost\n");
-            exit(-1);
-        }
-        
-        if(strstr(buffer, "exit") != NULL){
-            printf("<!>Connection to Server Disbanded\n");
-            break;
-        }
-        printf("\n%s\n\n",buffer);
-        fflush(stdout);
-        */
-        
     }
     
 
