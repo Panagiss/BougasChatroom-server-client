@@ -12,9 +12,11 @@
 #include <sys/file.h>
 #include <fcntl.h>
 #include <pthread.h>
+#include <ctype.h>
 #include "queue.h"
 
-#define MAX_NAME_LEN 30
+#define MAX_NAME_LEN 31
+#define MAX_PASS_LEN 16
 #define MAX_CLIENTS 15
 #define THREAD_POOL_SIZE 10
 #define MAX_BUFF 1000
@@ -23,10 +25,20 @@
 
 static unsigned int cl_count=0;
 static int uid=10;
-
 pthread_mutex_t mutex=PTHREAD_MUTEX_INITIALIZER;
 queue q;
 
+
+void remove_spaces(const char *input, char *result)
+{
+  int i, j = 0;
+  for (i = 0; input[i] != '\0'; i++) {
+    if (!isspace((unsigned char) input[i])) {
+      result[j++] = input[i];
+    }
+  }
+  result[j] = '\0';
+}
 
 
 void str_overwrite_stdout(){
@@ -43,6 +55,49 @@ void str_trim_nl(char * arr, int length){
     }
 }
 
+int sign_up(client_node cli){
+    char key[15],usrn[MAX_NAME_LEN],passwd[MAX_PASS_LEN];
+    char n_usrn[MAX_NAME_LEN],n_passwd[MAX_PASS_LEN];
+    if(recv(cli->sockfd,key,20,0)<=0){
+        printf("Error Key Received\n");
+        return 0;
+    }
+    str_trim_nl(key,15);
+    if(strcmp(key,"planhtarxhs")!=0){
+        printf("Access Denied\nWrong Key\n");
+        return 0;
+    }
+    FILE *fp=fopen("./.t_server_usrs","a");
+    if(fp==NULL){
+        printf("ERROR opening File\n");
+        return 0;
+    }
+    printf("Access Granted\n");
+    //get username and password from client
+    if(recv(cli->sockfd,usrn,MAX_NAME_LEN,0)<=0){
+        printf("ERROR Receiving username\n");
+        return 0;
+    }
+    if(recv(cli->sockfd,passwd,MAX_PASS_LEN,0)<=0){
+        printf("ERROR Receiving password\n");
+        return 0;
+    }
+    //write to FILE
+    str_trim_nl(usrn,MAX_NAME_LEN);
+    remove_spaces(usrn,n_usrn);
+    remove_spaces(passwd,n_passwd);
+   
+    if(fprintf(fp,"%s:%s\n",n_usrn,n_passwd)<=0){
+        printf("ERROR Writting to file\n");
+        return 0;
+    }
+    fclose(fp);
+    return 1;
+}
+
+int sign_in(client_node cli){
+    
+}
 
 
 
@@ -52,21 +107,50 @@ void * handle_client(void *arg){
     char name[MAX_NAME_LEN];
     int leave_flag=0;
     cl_count++;
+    char choice[3];
 
     client_node cli=(client_node)arg;
 
-    //get name
-    if(recv(cli->sockfd,name,MAX_NAME_LEN,0)<=0 || strlen(name)<2 || strlen(name)>= MAX_NAME_LEN-1 ){
-        printf("Enter the name correctly\n");
+    //sign in or sign up
+    if(recv(cli->sockfd,choice,1,0)<=0){
+        printf("Error Choice\n");
         leave_flag=1;
-    }else{
-        strcpy(cli->name,name);
-        sprintf(buffer,"%s has joined\n",cli->name);
-        printf("%s",buffer);
-        send_msg(q,buffer,cli->uid);
-    }
-    bzero(buffer,MAX_BUFF);
+    }else
+    {
+        if(atoi(choice)==1){
+            printf("Sign in S\n");
+        }else if(atoi(choice)==2){
+            printf("Sign up S\n");
+            if(sign_up(cli)==0){
+                printf("Error Sign up\n");
+                leave_flag=1;
+            }else
+            {
+                printf("Sign up complete\n");
+            }
+            
 
+        }else{
+            printf("Error Bad Choice\n");
+            leave_flag=1;
+        }
+
+        //get name
+        if(recv(cli->sockfd,name,MAX_NAME_LEN,0)<=0 || strlen(name)<2 || strlen(name)>= MAX_NAME_LEN-1 ){
+            printf("Enter the name correctly\n");
+            leave_flag=1;
+        }else{
+            strcpy(cli->name,name);
+            sprintf(buffer,"%s has joined\n",cli->name);
+            printf("%s",buffer);
+            send_msg(q,buffer,cli->uid);
+        }
+        bzero(buffer,MAX_BUFF);
+
+    }
+    
+    
+    //chatting
     while(1){
         if(leave_flag){
             break;
@@ -83,7 +167,7 @@ void * handle_client(void *arg){
                 str_trim_nl(buffer,strlen(buffer));
                 printf("%s\n",buffer);
             }
-        }else if(receive ==0||strcmp(buffer,"exit")==0){
+        }else if(receive ==0||strcmp(buffer,"exit")||strcmp(buffer,"EXIT")==0){
             sprintf(buffer,"%s has left\n",cli->name);
             printf("%s\n",buffer);
 
