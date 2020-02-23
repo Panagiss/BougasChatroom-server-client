@@ -177,6 +177,31 @@ int sign_up(){
     
 }
 
+int sign_in(){
+    char usrn[MAX_NAME_LEN];
+    char passwd[MAX_PASS_LEN];
+    printf("Username: ");
+    if(fgets(usrn,MAX_NAME_LEN-1,stdin)==NULL){
+        fprintf(stderr,"Error Username\n");
+        return 0;
+    }
+    printf("\nPassword: ");
+    if(fgets(passwd,MAX_PASS_LEN-1,stdin)==NULL){
+        fprintf(stderr,"Error Password\n");
+        return 0;
+    }
+    //sending username and password back to server
+    if(send(sockfd,usrn,MAX_NAME_LEN,0)<=0){
+        fprintf(stderr,"Error sending Username\n");
+        return 0;
+    }
+    if(send(sockfd,passwd,MAX_PASS_LEN,0)<=0){
+        fprintf(stderr,"Error sending Password\n");
+        return 0;
+    }
+    return 1;
+}
+
 
 
 
@@ -236,6 +261,22 @@ int main(int argc, char *argv[])
 
     if(atoi(choice)==1){
         printf("Sent Choice 1\n");
+        if(sign_in()==0){
+            fprintf(stderr,"Error Signing in\n");
+            return EXIT_FAILURE;
+        }else
+        {   char tmp[2];
+            recv(sockfd,tmp,1,0);
+            if(atoi(tmp)==1){
+                printf("Successful Sign in\n");
+            }else
+            {
+                return EXIT_FAILURE;
+            }
+            
+            
+        }
+
     }else if(atoi(choice)==2){
         printf("Sign up Choice 2\n");
         if(sign_up()==0){

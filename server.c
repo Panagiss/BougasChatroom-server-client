@@ -73,7 +73,7 @@ int sign_up(client_node cli){
         return 0;
     }
     printf("Access Granted\n");
-    //get username and password from client
+    //get new username and password from client
     if(recv(cli->sockfd,usrn,MAX_NAME_LEN,0)<=0){
         printf("ERROR Receiving username\n");
         return 0;
@@ -96,7 +96,52 @@ int sign_up(client_node cli){
 }
 
 int sign_in(client_node cli){
-    
+    char usrn[MAX_NAME_LEN],passwd[MAX_PASS_LEN];
+    char line[MAX_NAME_LEN+MAX_PASS_LEN];
+    FILE *fp;
+    char delim[]=":";
+    int info[2]={0};
+
+    //get username and password from client
+    if(recv(cli->sockfd,usrn,MAX_NAME_LEN,0)<=0){
+        printf("ERROR Receiving username\n");
+        return 0;
+    }
+    if(recv(cli->sockfd,passwd,MAX_PASS_LEN,0)<=0){
+        printf("ERROR Receiving password\n");
+        return 0;
+    }
+    if ((fp = fopen("./.t_server_usrs", "r")) == NULL) {
+        printf("Error! opening file");
+        return 0;
+    }
+
+    // reads text until newline is encountered
+    while(fgets(line, MAX_NAME_LEN+MAX_PASS_LEN, fp)) {
+        printf("%s\n", line);
+        str_trim_nl(line,MAX_NAME_LEN+MAX_PASS_LEN);
+        char *ptr = strtok(line, delim);
+        
+	    while(ptr != NULL)
+	    {   
+            if(strcmp(usrn,ptr)==0){
+                info[0]=1;
+            }
+            if(strcmp(passwd,ptr)==0){
+                info[1]=1;
+            }
+            printf("'%s'\n", ptr);
+            ptr = strtok(NULL, delim);
+	    }
+    }
+    if(info[0]!=1 || info[1]!=1){
+        return 0;
+    }
+
+    return 1;
+    fclose(fp);
+
+
 }
 
 
@@ -119,6 +164,16 @@ void * handle_client(void *arg){
     {
         if(atoi(choice)==1){
             printf("Sign in S\n");
+            if(sign_in(cli)==0){
+                printf("Error Signing in\n");
+                leave_flag=1;
+            }else
+            {
+                send(cli->sockfd,"1",1,0);
+                printf("Successful Sign in\n");
+            }
+            
+
         }else if(atoi(choice)==2){
             printf("Sign up S\n");
             if(sign_up(cli)==0){
