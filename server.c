@@ -115,6 +115,8 @@ int sign_in(client_node cli){
         printf("Error! opening file");
         return 0;
     }
+    str_trim_nl(usrn,MAX_NAME_LEN);
+    str_trim_nl(passwd,MAX_PASS_LEN);
 
     // reads text until newline is encountered
     while(fgets(line, MAX_NAME_LEN+MAX_PASS_LEN, fp)) {
@@ -146,7 +148,7 @@ int sign_in(client_node cli){
 
 
 
-
+// thread function for serving clients
 void * handle_client(void *arg){
     char buffer[MAX_BUFF];
     char name[MAX_NAME_LEN];
@@ -166,6 +168,7 @@ void * handle_client(void *arg){
             printf("Sign in S\n");
             if(sign_in(cli)==0){
                 printf("Error Signing in\n");
+                send(cli->sockfd,"0",1,0);
                 leave_flag=1;
             }else
             {
@@ -198,7 +201,9 @@ void * handle_client(void *arg){
             strcpy(cli->name,name);
             sprintf(buffer,"%s has joined\n",cli->name);
             printf("%s",buffer);
+            pthread_mutex_lock(&mutex);
             send_msg(q,buffer,cli->uid);
+            pthread_mutex_unlock(&mutex);
         }
         bzero(buffer,MAX_BUFF);
 
@@ -212,6 +217,7 @@ void * handle_client(void *arg){
         }
 
         int receive=recv(cli->sockfd,buffer,MAX_BUFF,0);
+        str_trim_nl(buffer,strlen(buffer));
         if(receive>0){
             if(strlen(buffer)>0){
 
@@ -219,10 +225,9 @@ void * handle_client(void *arg){
                 send_msg(q,buffer,cli->uid);
                 pthread_mutex_unlock(&mutex);
 
-                str_trim_nl(buffer,strlen(buffer));
                 printf("%s\n",buffer);
             }
-        }else if(receive ==0||strcmp(buffer,"exit")||strcmp(buffer,"EXIT")==0){
+        }else if(receive ==0 || strcmp(buffer,"exit")==0 || strcmp(buffer,"EXIT")==0){
             sprintf(buffer,"%s has left\n",cli->name);
             printf("%s\n",buffer);
 
@@ -238,6 +243,8 @@ void * handle_client(void *arg){
 
         bzero(buffer,MAX_BUFF);
     }
+
+    // leave flag initiated, thread closing
     close(cli->sockfd);
     pthread_mutex_lock(&mutex);
     queue_remove(q,cli->uid);

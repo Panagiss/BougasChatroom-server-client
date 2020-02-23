@@ -127,7 +127,7 @@ void send_msg_handler(){
         fgets(buffer,MAX_BUFF,stdin);
         str_trim_nl(buffer,MAX_BUFF);
 
-        if(strcmp(buffer,"exit")==0){
+        if(strcmp(buffer,"exit")==0||strcmp(buffer,"EXIT")==0){
             break;
         }else{
             sprintf(message,"%s: %s\n",name, buffer);
@@ -271,6 +271,7 @@ int main(int argc, char *argv[])
                 printf("Successful Sign in\n");
             }else
             {
+                printf("Unsuccessful Sign in\n");
                 return EXIT_FAILURE;
             }
             
