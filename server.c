@@ -63,7 +63,7 @@ int sign_up(client_node cli){
         return 0;
     }
     str_trim_nl(key,15);
-    if(strcmp(key,"planhtarxhs")!=0){
+    if(strcmp(key,"PLANHTARXHS")!=0){
         printf("Access Denied\nWrong Key\n");
         return 0;
     }
@@ -95,7 +95,7 @@ int sign_up(client_node cli){
     return 1;
 }
 
-int sign_in(client_node cli){
+int sign_in(client_node cli,char *name){
     char usrn[MAX_NAME_LEN],passwd[MAX_PASS_LEN];
     char line[MAX_NAME_LEN+MAX_PASS_LEN];
     FILE *fp;
@@ -120,7 +120,7 @@ int sign_in(client_node cli){
 
     // reads text until newline is encountered
     while(fgets(line, MAX_NAME_LEN+MAX_PASS_LEN, fp)) {
-        printf("%s\n", line);
+        //printf("%s\n", line);
         str_trim_nl(line,MAX_NAME_LEN+MAX_PASS_LEN);
         char *ptr = strtok(line, delim);
         
@@ -128,11 +128,12 @@ int sign_in(client_node cli){
 	    {   
             if(strcmp(usrn,ptr)==0){
                 info[0]=1;
+                strcpy(name,usrn);
             }
             if(strcmp(passwd,ptr)==0){
                 info[1]=1;
             }
-            printf("'%s'\n", ptr);
+            //printf("'%s'\n", ptr);
             ptr = strtok(NULL, delim);
 	    }
     }
@@ -164,47 +165,59 @@ void * handle_client(void *arg){
         leave_flag=1;
     }else
     {
+        //sign in
         if(atoi(choice)==1){
-            printf("Sign in S\n");
-            if(sign_in(cli)==0){
+            printf("User Tries to Sign in....\n");
+            if(sign_in(cli,name)==0){
                 printf("Error Signing in\n");
                 send(cli->sockfd,"0",1,0);
                 leave_flag=1;
             }else
             {
-                send(cli->sockfd,"1",1,0);
+                send(cli->sockfd,"1",1,0); //send client confirmation of success
                 printf("Successful Sign in\n");
             }
             
-
+        //sign up
         }else if(atoi(choice)==2){
-            printf("Sign up S\n");
+            printf("New User Tries to Connect\n");
             if(sign_up(cli)==0){
                 printf("Error Sign up\n");
                 leave_flag=1;
             }else
             {
-                printf("Sign up complete\n");
+                send(cli->sockfd,"1",1,0); //send client confirmation of success
+                printf("New User has Signed Up\nAnd Now Tries to Sign in....\n");
+                if(sign_in(cli,name)==0){
+                    printf("Error Signing in\n");
+                    send(cli->sockfd,"0",1,0);
+                    leave_flag=1;
+                }else
+                {
+                    send(cli->sockfd,"1",1,0); //send client confirmation of success
+                    printf("Successful Sign in\n");
+                }
             }
             
-
+        //wrong choice
         }else{
             printf("Error Bad Choice\n");
             leave_flag=1;
         }
 
+
         //get name
-        if(recv(cli->sockfd,name,MAX_NAME_LEN,0)<=0 || strlen(name)<2 || strlen(name)>= MAX_NAME_LEN-1 ){
-            printf("Enter the name correctly\n");
-            leave_flag=1;
-        }else{
+        if(leave_flag!=1){
+         
             strcpy(cli->name,name);
             sprintf(buffer,"%s has joined\n",cli->name);
             printf("%s",buffer);
             pthread_mutex_lock(&mutex);
             send_msg(q,buffer,cli->uid);
             pthread_mutex_unlock(&mutex);
+            
         }
+        
         bzero(buffer,MAX_BUFF);
 
     }
@@ -220,7 +233,7 @@ void * handle_client(void *arg){
         str_trim_nl(buffer,strlen(buffer));
         if(receive>0){
             if(strlen(buffer)>0){
-
+                
                 pthread_mutex_lock(&mutex);
                 send_msg(q,buffer,cli->uid);
                 pthread_mutex_unlock(&mutex);

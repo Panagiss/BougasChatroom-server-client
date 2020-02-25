@@ -10,6 +10,7 @@
 #include <netdb.h>
 #include <pthread.h>
 
+
 #define MAX_BUFF 1000
 #define MAX_NAME_LEN 31
 #define MAX_PASS_LEN 16
@@ -110,7 +111,9 @@ void recv_msg_handler(){
     while(1){
        int receive= recv(sockfd,message,MAX_BUFF,0); 
        if(receive >0){
+            printf("\033[0;31m");
             printf("\r->%s \n",message);
+            printf("\033[0m");
             str_overwrite_stdout();
        }else if(receive==0){
             break;
@@ -142,7 +145,7 @@ void send_msg_handler(){
 int sign_up(){
     char key[15];
     //get key and send it to server for validation
-    printf("Please,Give the Unique Key of the ChatRoom in order to Join\nIf you don't know the Key, ask the Admin\n");
+    printf("\nPlease,Give the Unique Key of the ChatRoom in order to Join\nIf you don't know the Key, ask the Admin kindly\n");
     if(fgets(key,14,stdin)==NULL){
         fprintf(stderr,"Error Reading Key\n");
         return 0;
@@ -154,12 +157,12 @@ int sign_up(){
 
     char usrn[MAX_NAME_LEN];
     char passwd[MAX_PASS_LEN];
-    printf("Give a Username, it will be used everytime for Signing in\nUsername Cannot have Spaces and Cannot exceed 30 characters\n");
+    printf("\nGive a Username, it will be used everytime for Signing in and that's How others are going to see you\nUsername Cannot exceed 30 characters and Spaces won't count\n");
     if(fgets(usrn,MAX_NAME_LEN-1,stdin)==NULL){
         fprintf(stderr,"Error Username\n");
         return 0;
     }
-    printf("Give a Password, it will be used everytime for Signing in\nPassword Cannot have Spaces and Cannot exceed 15 characters\n");
+    printf("\nGive a Password, it will be used everytime for Signing in\nPassword Cannot exceed 15 characters and Spaces won't count\n");
     if(fgets(passwd,MAX_PASS_LEN-1,stdin)==NULL){
         fprintf(stderr,"Error Password\n");
         return 0;
@@ -199,6 +202,8 @@ int sign_in(){
         fprintf(stderr,"Error sending Password\n");
         return 0;
     }
+    strcpy(name,usrn);
+    str_trim_nl(name,strlen(name));
     return 1;
 }
 
@@ -251,6 +256,7 @@ int main(int argc, char *argv[])
     }
 
 
+    printf("* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *\n* In Order to Join our CHATROOM Sign in or if you are New User Sign up      *\n* Please take in mind that this not final product and is subject to change  *\n* If you find a bug contact the admin                                       *\n* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *\n");
     //sign up or sign in 
     printf("\n1.Sign in\n2.Sign up\n");
     fgets(choice,3,stdin);
@@ -259,55 +265,70 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
+    // sign in
     if(atoi(choice)==1){
-        printf("Sent Choice 1\n");
-        if(sign_in()==0){
+    
+        if(sign_in()==0){     //error from the local sign in function
             fprintf(stderr,"Error Signing in\n");
             return EXIT_FAILURE;
         }else
         {   char tmp[2];
             recv(sockfd,tmp,1,0);
-            if(atoi(tmp)==1){
+            if(atoi(tmp)==1){ //correct sign in, confirmed also from the server
                 printf("Successful Sign in\n");
             }else
-            {
+            {                 //error found from server side
                 printf("Unsuccessful Sign in\n");
                 return EXIT_FAILURE;
             }
             
             
         }
-
+    //sign up
     }else if(atoi(choice)==2){
-        printf("Sign up Choice 2\n");
-        if(sign_up()==0){
+       
+        if(sign_up()==0){     //error from the local sign up function
             fprintf(stderr,"Error Signing up\n");
             return EXIT_FAILURE;
         }else
-        {
-            printf("Sign up Complete\n");
+        {   char tmp[2];
+            recv(sockfd,tmp,1,0);
+            if(atoi(tmp)==1){ //correct sign up, confirmed also from the server
+                printf("Sign Up Completed Successfully\nNow Sign in with your Username and Password\n");
+
+                //new user is going to sign in after successful sign up
+
+                if(sign_in()==0){     //error from the local sign in function
+                    fprintf(stderr,"Error Signing in\n");
+                    return EXIT_FAILURE;
+                }else
+                {   char tmp[2];
+                    recv(sockfd,tmp,1,0);
+                    if(atoi(tmp)==1){ //correct sign in, confirmed also from the server
+                        printf("Successful Sign in\n");
+                    }else
+                    {                 //error found from server side
+                        printf("Unsuccessful Sign in\n");
+                        return EXIT_FAILURE;
+                    }
+                }
+
+
+            }else
+            {                 //error found from server side
+                printf("Unsuccessful Sign Up\n");
+                return EXIT_FAILURE;
+            }
         }
         
+
+    //false option
     }else{
         printf("Error Bad Choice\n");
         return EXIT_FAILURE;
     }
 
    
-
-    //get name
-    printf("\nEnter your name: ");
-    fgets(name,MAX_NAME_LEN,stdin);
-    str_trim_nl(name,strlen(name));
-
-    if(strlen(name)>MAX_NAME_LEN -1 || strlen(name) < 2){
-       printf("Incorrect Name Provided\n");
-       return EXIT_FAILURE; 
-    }
-
-
-    //send the name to server
-    send(sockfd,name,MAX_NAME_LEN,0);
 
     welcome();
     welcome2();
