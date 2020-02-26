@@ -9,6 +9,7 @@
 #include <signal.h>
 #include <netdb.h>
 #include <pthread.h>
+#include <curses.h>
 
 
 #define MAX_BUFF 1000
@@ -150,28 +151,77 @@ int sign_up(){
         fprintf(stderr,"Error Reading Key\n");
         return 0;
     }
-    if(send(sockfd,key,14,0)<=0){
+    if(send(sockfd,key,14,0)<=0){ //sending unique key to server for corfirmation
         fprintf(stderr,"Error sending Key\n");
         return 0;
     }
-
-    char usrn[MAX_NAME_LEN];
-    char passwd[MAX_PASS_LEN];
-    printf("\nGive a Username, it will be used everytime for Signing in and that's How others are going to see you\nUsername Cannot exceed 30 characters and Spaces won't count\n");
-    if(fgets(usrn,MAX_NAME_LEN-1,stdin)==NULL){
-        fprintf(stderr,"Error Username\n");
+    bzero(key,15);
+    if(recv(sockfd,key,1,0)<=0){ //confirmation from server
+        fprintf(stderr,"Error receiving Key\n");
         return 0;
     }
+    if(atoi(key)==1){
+        printf("Correct Key, Access Granted\n");
+    }else
+    {
+        printf("Wrong Key, Access Disbanded\n");
+        return 0;
+    }
+
+    //username
+    char usrn[MAX_NAME_LEN];
+    printf("\nGive a Username, it will be used everytime for Signing in and that's How others are going to see you\nUsername Cannot exceed 30 characters and Spaces won't count\n");
+    while(1){ //while username is not the same with other users
+        bzero(usrn,MAX_NAME_LEN);
+        if(fgets(usrn,MAX_NAME_LEN-1,stdin)==NULL){
+            fprintf(stderr,"Error Username\n");
+            return 0;
+        }
+        if(send(sockfd,usrn,MAX_NAME_LEN,0)<=0){
+            fprintf(stderr,"Error sending Username\n");
+            return 0;
+        }
+        bzero(key,15);
+        if(recv(sockfd,key,1,0)<=0){ //confirmation from server
+            fprintf(stderr,"Error receiving Key\n");
+            return 0;
+        }
+        if(atoi(key)==0){
+            fprintf(stderr,"\nUsername Already Exists,Try another one\n");
+        }else
+        {
+            break;
+        }
+        
+    }
+    
+
+    fflush(stdin);
+    fflush(stdout);
+    char passwd[MAX_PASS_LEN];
+    int i=0;
+    char a;
+
+    //password
     printf("\nGive a Password, it will be used everytime for Signing in\nPassword Cannot exceed 15 characters and Spaces won't count\n");
+    /*while (i<MAX_PASS_LEN){
+        passwd[i]=getch();
+        a=passwd[i];
+        if(a==13){
+            break;
+        } else{
+            printf("*");
+        } 
+        i++;
+    }
+    passwd[i]='\0';
+    */
     if(fgets(passwd,MAX_PASS_LEN-1,stdin)==NULL){
         fprintf(stderr,"Error Password\n");
         return 0;
     }
-    //sending username and password back to server
-    if(send(sockfd,usrn,MAX_NAME_LEN,0)<=0){
-        fprintf(stderr,"Error sending Username\n");
-        return 0;
-    }
+   
+    
     if(send(sockfd,passwd,MAX_PASS_LEN,0)<=0){
         fprintf(stderr,"Error sending Password\n");
         return 0;
@@ -261,7 +311,7 @@ int main(int argc, char *argv[])
     printf("\n1.Sign in\n2.Sign up\n");
     fgets(choice,3,stdin);
     if(send(sockfd,choice,1,0)<=0){
-        printf("Error Choice\n");
+        printf("\nError Choice\n");
         return EXIT_FAILURE;
     }
 
@@ -269,21 +319,22 @@ int main(int argc, char *argv[])
     if(atoi(choice)==1){
     
         if(sign_in()==0){     //error from the local sign in function
-            fprintf(stderr,"Error Signing in\n");
+            fprintf(stderr,"\nError Signing in\n");
             return EXIT_FAILURE;
         }else
         {   char tmp[2];
             recv(sockfd,tmp,1,0);
             if(atoi(tmp)==1){ //correct sign in, confirmed also from the server
-                printf("Successful Sign in\n");
+                printf("\nSuccessful Sign in\n");
             }else
             {                 //error found from server side
-                printf("Unsuccessful Sign in\n");
+                printf("\nUnsuccessful Sign in\n");
                 return EXIT_FAILURE;
             }
             
             
         }
+
     //sign up
     }else if(atoi(choice)==2){
        
@@ -294,7 +345,7 @@ int main(int argc, char *argv[])
         {   char tmp[2];
             recv(sockfd,tmp,1,0);
             if(atoi(tmp)==1){ //correct sign up, confirmed also from the server
-                printf("Sign Up Completed Successfully\nNow Sign in with your Username and Password\n");
+                printf("\nSign Up Completed Successfully\nNow Sign in with your Username and Password\n\n");
 
                 //new user is going to sign in after successful sign up
 
@@ -305,10 +356,10 @@ int main(int argc, char *argv[])
                 {   char tmp[2];
                     recv(sockfd,tmp,1,0);
                     if(atoi(tmp)==1){ //correct sign in, confirmed also from the server
-                        printf("Successful Sign in\n");
+                        printf("\nSuccessful Sign in\n");
                     }else
                     {                 //error found from server side
-                        printf("Unsuccessful Sign in\n");
+                        printf("\nUnsuccessful Sign in\n");
                         return EXIT_FAILURE;
                     }
                 }
@@ -316,7 +367,7 @@ int main(int argc, char *argv[])
 
             }else
             {                 //error found from server side
-                printf("Unsuccessful Sign Up\n");
+                printf("\nUnsuccessful Sign Up\n");
                 return EXIT_FAILURE;
             }
         }
@@ -324,7 +375,7 @@ int main(int argc, char *argv[])
 
     //false option
     }else{
-        printf("Error Bad Choice\n");
+        printf("\nError Bad Choice\n");
         return EXIT_FAILURE;
     }
 

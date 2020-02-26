@@ -55,6 +55,42 @@ void str_trim_nl(char * arr, int length){
     }
 }
 
+int check_double_user(char * usrn){
+    char line[MAX_NAME_LEN+MAX_PASS_LEN];
+    char delim[]=":";
+    int i;
+
+    pthread_mutex_lock(&mutex);
+    FILE *fp=fopen("./.t_server_usrs","r");
+    pthread_mutex_unlock(&mutex);
+    if(fp==NULL){
+        printf("ERROR opening File\n");
+        return 0;
+    }
+    str_trim_nl(usrn,MAX_NAME_LEN);
+
+    // reads text until newline is encountered
+    while(fgets(line, MAX_NAME_LEN+MAX_PASS_LEN, fp)) {
+        //printf("%s\n", line);
+        str_trim_nl(line,MAX_NAME_LEN+MAX_PASS_LEN);
+        char *ptr = strtok(line, delim);
+        i=0;
+	    while(ptr != NULL)
+	    {   
+            if(i==0 && strcmp(usrn,ptr)==0){
+                fclose(fp);
+                return 0;
+            }
+            //printf("'%s'\n", ptr);
+            ptr = strtok(NULL, delim);
+            i++;
+	    }
+    }
+    return 1;
+    fclose(fp);
+
+}
+
 int sign_up(client_node cli){
     char key[15],usrn[MAX_NAME_LEN],passwd[MAX_PASS_LEN];
     char n_usrn[MAX_NAME_LEN],n_passwd[MAX_PASS_LEN];
@@ -65,32 +101,59 @@ int sign_up(client_node cli){
     str_trim_nl(key,15);
     if(strcmp(key,"PLANHTARXHS")!=0){
         printf("Access Denied\nWrong Key\n");
+        send(cli->sockfd,"0",1,0); //send denial message to client
         return 0;
     }
+    send(cli->sockfd,"1",1,0); //send acceptance message to client
+
+    pthread_mutex_lock(&mutex);
     FILE *fp=fopen("./.t_server_usrs","a");
+    pthread_mutex_unlock(&mutex);
     if(fp==NULL){
         printf("ERROR opening File\n");
         return 0;
     }
     printf("Access Granted\n");
     //get new username and password from client
-    if(recv(cli->sockfd,usrn,MAX_NAME_LEN,0)<=0){
-        printf("ERROR Receiving username\n");
-        return 0;
+
+    //username
+    while(1){
+        bzero(usrn,MAX_NAME_LEN);
+        if(recv(cli->sockfd,usrn,MAX_NAME_LEN,0)<=0){
+            printf("ERROR Receiving username\n");
+            fclose(fp);
+            return 0;
+        }
+        if(check_double_user(usrn)==0){
+            send(cli->sockfd,"0",1,0);
+        }
+        else
+        {
+            send(cli->sockfd,"1",1,0);
+            break;
+        }
     }
+    
+    
+    //password
     if(recv(cli->sockfd,passwd,MAX_PASS_LEN,0)<=0){
         printf("ERROR Receiving password\n");
+        fclose(fp);
         return 0;
     }
     //write to FILE
     str_trim_nl(usrn,MAX_NAME_LEN);
     remove_spaces(usrn,n_usrn);
     remove_spaces(passwd,n_passwd);
-   
+    
+    pthread_mutex_lock(&mutex);
     if(fprintf(fp,"%s:%s\n",n_usrn,n_passwd)<=0){
         printf("ERROR Writting to file\n");
+        pthread_mutex_unlock(&mutex);
+        fclose(fp);
         return 0;
     }
+    pthread_mutex_unlock(&mutex);
     fclose(fp);
     return 1;
 }
@@ -138,6 +201,7 @@ int sign_in(client_node cli,char *name){
 	    }
     }
     if(info[0]!=1 || info[1]!=1){
+        fclose(fp);
         return 0;
     }
 
@@ -161,15 +225,15 @@ void * handle_client(void *arg){
 
     //sign in or sign up
     if(recv(cli->sockfd,choice,1,0)<=0){
-        printf("Error Choice\n");
+        printf("\nError Choice\n");
         leave_flag=1;
     }else
     {
         //sign in
         if(atoi(choice)==1){
-            printf("User Tries to Sign in....\n");
+            printf("\nUser Tries to Sign in....\n");
             if(sign_in(cli,name)==0){
-                printf("Error Signing in\n");
+                //printf("Error Signing in\n");
                 send(cli->sockfd,"0",1,0);
                 leave_flag=1;
             }else
@@ -180,16 +244,17 @@ void * handle_client(void *arg){
             
         //sign up
         }else if(atoi(choice)==2){
-            printf("New User Tries to Connect\n");
+            printf("\nNew User Tries to Connect\n");
             if(sign_up(cli)==0){
-                printf("Error Sign up\n");
+                //printf("Error Sign up\n");
+                send(cli->sockfd,"0",1,0);
                 leave_flag=1;
             }else
             {
                 send(cli->sockfd,"1",1,0); //send client confirmation of success
                 printf("New User has Signed Up\nAnd Now Tries to Sign in....\n");
                 if(sign_in(cli,name)==0){
-                    printf("Error Signing in\n");
+                    //printf("Error Signing in\n");
                     send(cli->sockfd,"0",1,0);
                     leave_flag=1;
                 }else
@@ -201,7 +266,7 @@ void * handle_client(void *arg){
             
         //wrong choice
         }else{
-            printf("Error Bad Choice\n");
+            printf("\nError Bad Choice\n");
             leave_flag=1;
         }
 
@@ -210,7 +275,7 @@ void * handle_client(void *arg){
         if(leave_flag!=1){
          
             strcpy(cli->name,name);
-            sprintf(buffer,"%s has joined\n",cli->name);
+            sprintf(buffer,"\n%s has joined\n",cli->name);
             printf("%s",buffer);
             pthread_mutex_lock(&mutex);
             send_msg(q,buffer,cli->uid);
