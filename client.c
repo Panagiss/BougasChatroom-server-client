@@ -144,50 +144,69 @@ void send_msg_handler(){
 }
 
 int sign_up(){
+    initscr();
     char key[15];
     //get key and send it to server for validation
-    printf("\nPlease,Give the Unique Key of the ChatRoom in order to Join\nIf you don't know the Key, ask the Admin kindly\n");
+    printw("\nPlease,Give the Unique Key of the ChatRoom in order to Join\nIf you don't know the Key, ask the Admin kindly\n");
+    refresh();
     if(fgets(key,14,stdin)==NULL){
-        fprintf(stderr,"Error Reading Key\n");
+        printw("Error Reading Key\n");
+        refresh();
+        endwin();
         return 0;
     }
     if(send(sockfd,key,14,0)<=0){ //sending unique key to server for corfirmation
-        fprintf(stderr,"Error sending Key\n");
+        printw("Error sending Key\n");
+        refresh();
+        endwin();
         return 0;
     }
     bzero(key,15);
     if(recv(sockfd,key,1,0)<=0){ //confirmation from server
-        fprintf(stderr,"Error receiving Key\n");
+        printw("Error receiving Key\n");
+        refresh();
+        endwin();
         return 0;
     }
     if(atoi(key)==1){
-        printf("Correct Key, Access Granted\n");
+        printw("Correct Key, Access Granted\n");
+        refresh();
     }else
     {
-        printf("Wrong Key, Access Disbanded\n");
+        printw("Wrong Key, Access Disbanded\n");
+        refresh();
+        endwin();
         return 0;
     }
 
     //username
     char usrn[MAX_NAME_LEN];
-    printf("\nGive a Username, it will be used everytime for Signing in and that's How others are going to see you\nUsername Cannot exceed 30 characters and Spaces won't count\n");
+    printw("\nGive a Username, it will be used everytime for Signing in and that's How others are going to see you\nUsername Cannot exceed 30 characters and Spaces won't count\n");
+    refresh();
     while(1){ //while username is not the same with other users
         bzero(usrn,MAX_NAME_LEN);
         if(fgets(usrn,MAX_NAME_LEN-1,stdin)==NULL){
-            fprintf(stderr,"Error Username\n");
+            printw("Error Username\n");
+            refresh();
+            endwin();
             return 0;
         }
         if(send(sockfd,usrn,MAX_NAME_LEN,0)<=0){
-            fprintf(stderr,"Error sending Username\n");
+            printw("Error sending Username\n");
+            refresh();
+            endwin();
             return 0;
         }
         bzero(key,15);
         if(recv(sockfd,key,1,0)<=0){ //confirmation from server
-            fprintf(stderr,"Error receiving Key\n");
+            printw("Error receiving Key\n");
+            refresh();
+            endwin();
             return 0;
         }
         if(atoi(key)==0){
-            fprintf(stderr,"\nUsername Already Exists,Try another one\n");
+            printw("\nUsername Already Exists,Try another one\n");
+            refresh();
         }else
         {
             break;
@@ -196,30 +215,31 @@ int sign_up(){
     }
     
 
-    fflush(stdin);
-    fflush(stdout);
+   
     char passwd[MAX_PASS_LEN];
-    int i=0;
-    char a;
-
     //password
-    printf("\nGive a Password, it will be used everytime for Signing in\nPassword Cannot exceed 15 characters and Spaces won't count\n");
-    /*while (i<MAX_PASS_LEN){
-        passwd[i]=getch();
-        a=passwd[i];
-        if(a==13){
-            break;
-        } else{
-            printf("*");
+    printw("\nGive a Password, it will be used everytime for Signing in\nPassword Cannot exceed 15 characters and Spaces won't count\n");
+    
+	noecho();
+
+    int p=0; 
+    do{ 
+        passwd[p]=getch(); 
+        if(passwd[p]!='\n'){ 
+            printw("*");
+            refresh(); 
         } 
-        i++;
-    }
-    passwd[i]='\0';
-    */
-    if(fgets(passwd,MAX_PASS_LEN-1,stdin)==NULL){
+        p++; 
+    }while(passwd[p-1]!='\n'); 
+    passwd[p-1]='\0'; 
+
+    endwin();
+    
+    
+    /*if(fgets(passwd,MAX_PASS_LEN-1,stdin)==NULL){
         fprintf(stderr,"Error Password\n");
         return 0;
-    }
+    }*/
    
     
     if(send(sockfd,passwd,MAX_PASS_LEN,0)<=0){
@@ -270,22 +290,22 @@ int main(int argc, char *argv[])
     char choice[3];
     signal(SIGINT,signalhandler);
 
-    if (argc < 3)
+    if (argc < 2)
     {
-        fprintf(stderr, "<!>Usage %s hostname port\n", argv[0]);
+        fprintf(stderr, "<!>Usage %s port\n", argv[0]);
         exit(0);
     }
 
     //socket settings
 
-    portno = atoi(argv[2]);
+    portno = atoi(argv[1]);
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
    
     if (sockfd < 0){
         error("<!>ERROR opening socket");
     }
     
-    server = gethostbyname(argv[1]);
+    server = gethostbyname("10.0.2.15");
     
     if (server == NULL)
     {

@@ -254,7 +254,7 @@ void * handle_client(void *arg){
                 send(cli->sockfd,"1",1,0); //send client confirmation of success
                 printf("New User has Signed Up\nAnd Now Tries to Sign in....\n");
                 if(sign_in(cli,name)==0){
-                    //printf("Error Signing in\n");
+                    printf("Failed\n");
                     send(cli->sockfd,"0",1,0);
                     leave_flag=1;
                 }else
@@ -381,13 +381,13 @@ int main(int argc, char *argv[])
 
     //listen
     if(listen(sockfd, MAX_CLIENTS) == 0){
-		printf("(+)Listening....\n");
+		//printf("(+)Listening....\n");
 	}else{
 		printf("(!)Error in binding.\n");
 	}
     int t_counter=0;
 
-    printf("=== SERVER INITIALIZING CHATROOM ===\n");
+    printf("=== SERVER INITIALIZED CHATROOM ===\n");
     
     while (1)
     {  
