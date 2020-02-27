@@ -219,9 +219,12 @@ void * handle_client(void *arg){
     char name[MAX_NAME_LEN];
     int leave_flag=0;
     cl_count++;
-    char choice[3];
+    char choice[3],client_address[15];
 
     client_node cli=(client_node)arg;
+    if (inet_ntop(AF_INET, &cli->address.sin_addr, client_address,INET_ADDRSTRLEN) == NULL) {
+        fprintf(stderr, "(!)Could not convert byte to address\n");
+    }
 
     //sign in or sign up
     if(recv(cli->sockfd,choice,1,0)<=0){
@@ -231,7 +234,7 @@ void * handle_client(void *arg){
     {
         //sign in
         if(atoi(choice)==1){
-            printf("\nUser Tries to Sign in....\n");
+            printf("\nUser(%s) Tries to Sign in....\n",client_address);
             if(sign_in(cli,name)==0){
                 //printf("Error Signing in\n");
                 send(cli->sockfd,"0",1,0);
@@ -244,7 +247,7 @@ void * handle_client(void *arg){
             
         //sign up
         }else if(atoi(choice)==2){
-            printf("\nNew User Tries to Connect\n");
+            printf("\nNew User(%s) Tries to Connect\n",client_address);
             if(sign_up(cli)==0){
                 //printf("Error Sign up\n");
                 send(cli->sockfd,"0",1,0);
@@ -252,7 +255,7 @@ void * handle_client(void *arg){
             }else
             {
                 send(cli->sockfd,"1",1,0); //send client confirmation of success
-                printf("New User has Signed Up\nAnd Now Tries to Sign in....\n");
+                printf("User(%s) has Signed Up Successfully\nAnd Now Tries to Sign in....\n",client_address);
                 if(sign_in(cli,name)==0){
                     printf("Failed\n");
                     send(cli->sockfd,"0",1,0);
@@ -275,7 +278,7 @@ void * handle_client(void *arg){
         if(leave_flag!=1){
          
             strcpy(cli->name,name);
-            sprintf(buffer,"\n%s has joined\n",cli->name);
+            sprintf(buffer,"\nUser %s has joined as => %s\n\n",client_address,cli->name);
             printf("%s",buffer);
             pthread_mutex_lock(&mutex);
             send_msg(q,buffer,cli->uid);
@@ -306,7 +309,7 @@ void * handle_client(void *arg){
                 printf("%s\n",buffer);
             }
         }else if(receive ==0 || strcmp(buffer,"exit")==0 || strcmp(buffer,"EXIT")==0){
-            sprintf(buffer,"%s has left\n",cli->name);
+            sprintf(buffer,"\n%s has left\n",cli->name);
             printf("%s\n",buffer);
 
             pthread_mutex_lock(&mutex);

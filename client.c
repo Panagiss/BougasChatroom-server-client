@@ -144,69 +144,51 @@ void send_msg_handler(){
 }
 
 int sign_up(){
-    initscr();
     char key[15];
     //get key and send it to server for validation
-    printw("\nPlease,Give the Unique Key of the ChatRoom in order to Join\nIf you don't know the Key, ask the Admin kindly\n");
-    refresh();
+    printf("\nPlease,Give the Unique Key of the ChatRoom in order to Join\nIf you don't know the Key, ask the Admin kindly\n");
     if(fgets(key,14,stdin)==NULL){
-        printw("Error Reading Key\n");
-        refresh();
-        endwin();
+        printf("Error Reading Key\n");
         return 0;
     }
     if(send(sockfd,key,14,0)<=0){ //sending unique key to server for corfirmation
-        printw("Error sending Key\n");
-        refresh();
-        endwin();
+        printf("Error sending Key\n");
         return 0;
     }
     bzero(key,15);
     if(recv(sockfd,key,1,0)<=0){ //confirmation from server
-        printw("Error receiving Key\n");
-        refresh();
-        endwin();
+        printf("Error receiving Key\n");
         return 0;
     }
     if(atoi(key)==1){
-        printw("Correct Key, Access Granted\n");
-        refresh();
+        printf("Correct Key, Access Granted\n");
     }else
     {
-        printw("Wrong Key, Access Disbanded\n");
-        refresh();
-        endwin();
+        printf("Wrong Key, Access Disbanded\n");
         return 0;
     }
 
     //username
     char usrn[MAX_NAME_LEN];
-    printw("\nGive a Username, it will be used everytime for Signing in and that's How others are going to see you\nUsername Cannot exceed 30 characters and Spaces won't count\n");
-    refresh();
+    printf("\nGive a Username, it will be used everytime for Signing in and that's How others are going to see you\nUsername Cannot exceed 30 characters and Spaces won't count\n");
     while(1){ //while username is not the same with other users
         bzero(usrn,MAX_NAME_LEN);
         if(fgets(usrn,MAX_NAME_LEN-1,stdin)==NULL){
-            printw("Error Username\n");
-            refresh();
-            endwin();
+            printf("Error Reading Key\n");
             return 0;
         }
-        if(send(sockfd,usrn,MAX_NAME_LEN,0)<=0){
-            printw("Error sending Username\n");
-            refresh();
-            endwin();
+
+        if(send(sockfd,usrn,MAX_NAME_LEN-1,0)<=0){
+            printf("Error sending Username\n");
             return 0;
         }
         bzero(key,15);
         if(recv(sockfd,key,1,0)<=0){ //confirmation from server
-            printw("Error receiving Key\n");
-            refresh();
-            endwin();
+            printf("Error receiving Key\n");
             return 0;
         }
         if(atoi(key)==0){
-            printw("\nUsername Already Exists,Try another one\n");
-            refresh();
+            printf("\nUsername Already Exists,Try another one\n");
         }else
         {
             break;
@@ -215,10 +197,11 @@ int sign_up(){
     }
     
 
-   
+    initscr();
+    cbreak();
     char passwd[MAX_PASS_LEN];
     //password
-    printw("\nGive a Password, it will be used everytime for Signing in\nPassword Cannot exceed 15 characters and Spaces won't count\n");
+    printw("========ENTERED SECURE PASSWORD MODE========\nGive a Password, it will be used everytime for Signing in\nPassword Cannot exceed 15 characters and Spaces won't count\n");
     
 	noecho();
 
@@ -230,9 +213,10 @@ int sign_up(){
             refresh(); 
         } 
         p++; 
-    }while(passwd[p-1]!='\n'); 
+    }while(passwd[p-1]!='\n' && p<MAX_PASS_LEN); 
     passwd[p-1]='\0'; 
 
+    clear();
     endwin();
     
     
@@ -258,17 +242,39 @@ int sign_in(){
         fprintf(stderr,"Error Username\n");
         return 0;
     }
-    printf("\nPassword: ");
+
+    /*printf("\nPassword: ");
     if(fgets(passwd,MAX_PASS_LEN-1,stdin)==NULL){
         fprintf(stderr,"Error Password\n");
         return 0;
-    }
+    }*/
+    //start ncurses lib
+    initscr();
+    cbreak();
+    
+    printw("========ENTERED SECURE PASSWORD MODE========\nPassword: ");
+	noecho();
+
+    int p=0; 
+    do{ 
+        passwd[p]=getch(); 
+        if(passwd[p]!='\n'){ 
+            printw("*");
+            refresh(); 
+        } 
+        p++; 
+    }while(passwd[p-1]!='\n' && p<MAX_PASS_LEN); 
+    passwd[p-1]='\0'; 
+
+    endwin();
+    //end ncurses lib
+
     //sending username and password back to server
-    if(send(sockfd,usrn,MAX_NAME_LEN,0)<=0){
+    if(send(sockfd,usrn,MAX_NAME_LEN-1,0)<=0){
         fprintf(stderr,"Error sending Username\n");
         return 0;
     }
-    if(send(sockfd,passwd,MAX_PASS_LEN,0)<=0){
+    if(send(sockfd,passwd,MAX_PASS_LEN-1,0)<=0){
         fprintf(stderr,"Error sending Password\n");
         return 0;
     }
@@ -365,7 +371,8 @@ int main(int argc, char *argv[])
         {   char tmp[2];
             recv(sockfd,tmp,1,0);
             if(atoi(tmp)==1){ //correct sign up, confirmed also from the server
-                printf("\nSign Up Completed Successfully\nNow Sign in with your Username and Password\n\n");
+                system("clear"); //clear terminal
+                printf("Sign Up Completed Successfully\nNow Sign in with your Username and Password\n\n");
 
                 //new user is going to sign in after successful sign up
 
