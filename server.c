@@ -166,11 +166,11 @@ int sign_in(client_node cli,char *name){
     int info[2]={0};
 
     //get username and password from client
-    if(recv(cli->sockfd,usrn,MAX_NAME_LEN,0)<=0){
+    if(recv(cli->sockfd,usrn,MAX_NAME_LEN-1,0)<=0){
         printf("ERROR Receiving username\n");
         return 0;
     }
-    if(recv(cli->sockfd,passwd,MAX_PASS_LEN,0)<=0){
+    if(recv(cli->sockfd,passwd,MAX_PASS_LEN-1,0)<=0){
         printf("ERROR Receiving password\n");
         return 0;
     }
@@ -249,7 +249,7 @@ void * handle_client(void *arg){
         }else if(atoi(choice)==2){
             printf("\nNew User(%s) Tries to Connect\n",client_address);
             if(sign_up(cli)==0){
-                //printf("Error Sign up\n");
+                printf("Error Sign up\n");
                 send(cli->sockfd,"0",1,0);
                 leave_flag=1;
             }else
@@ -278,8 +278,8 @@ void * handle_client(void *arg){
         if(leave_flag!=1){
          
             strcpy(cli->name,name);
-            sprintf(buffer,"\nUser %s has joined as => %s\n\n",client_address,cli->name);
-            printf("%s",buffer);
+            sprintf(buffer,"%s has joined\n",cli->name);
+            printf("\nUser %s has joined as => %s\n\n",client_address,cli->name);
             pthread_mutex_lock(&mutex);
             send_msg(q,buffer,cli->uid);
             pthread_mutex_unlock(&mutex);
@@ -309,8 +309,8 @@ void * handle_client(void *arg){
                 printf("%s\n",buffer);
             }
         }else if(receive ==0 || strcmp(buffer,"exit")==0 || strcmp(buffer,"EXIT")==0){
-            sprintf(buffer,"\n%s has left\n",cli->name);
-            printf("%s\n",buffer);
+            sprintf(buffer,"%s has left\n",cli->name);
+            printf("\n%s\n",buffer);
 
             pthread_mutex_lock(&mutex);
             send_msg(q,buffer,cli->uid);

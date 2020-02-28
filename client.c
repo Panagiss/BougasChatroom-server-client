@@ -112,10 +112,19 @@ void recv_msg_handler(){
     while(1){
        int receive= recv(sockfd,message,MAX_BUFF,0); 
        if(receive >0){
-            printf("\033[0;31m");
-            printf("\r->%s \n",message);
-            printf("\033[0m");
-            str_overwrite_stdout();
+           if(strstr(message,"Admin")!=NULL){
+                printf("\033[01;33m");
+                printf("\r->%s \n",message);
+                printf("\033[0m");
+                str_overwrite_stdout();
+           }else
+           {
+                printf("\033[0;31m");
+                printf("\r->%s \n",message);
+                printf("\033[0m");
+                str_overwrite_stdout();
+           }
+
        }else if(receive==0){
             break;
        }
@@ -248,6 +257,7 @@ int sign_in(){
         fprintf(stderr,"Error Password\n");
         return 0;
     }*/
+
     //start ncurses lib
     initscr();
     cbreak();
@@ -265,8 +275,8 @@ int sign_in(){
         p++; 
     }while(passwd[p-1]!='\n' && p<MAX_PASS_LEN); 
     passwd[p-1]='\0'; 
-
-    endwin();
+    clear();
+    endwin(); 
     //end ncurses lib
 
     //sending username and password back to server
@@ -274,6 +284,7 @@ int sign_in(){
         fprintf(stderr,"Error sending Username\n");
         return 0;
     }
+    
     if(send(sockfd,passwd,MAX_PASS_LEN-1,0)<=0){
         fprintf(stderr,"Error sending Password\n");
         return 0;
