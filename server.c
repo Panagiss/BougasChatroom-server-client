@@ -22,7 +22,6 @@
 #define MAX_BUFF 1000
 
 
-
 static unsigned int cl_count=0;
 static int uid=10;
 pthread_mutex_t mutex=PTHREAD_MUTEX_INITIALIZER;
@@ -174,10 +173,14 @@ int sign_in(client_node cli,char *name){
         printf("ERROR Receiving password\n");
         return 0;
     }
+
+    pthread_mutex_lock(&mutex);
     if ((fp = fopen("./.t_server_usrs", "r")) == NULL) {
         printf("Error! opening file");
         return 0;
     }
+    pthread_mutex_unlock(&mutex);
+
     str_trim_nl(usrn,MAX_NAME_LEN);
     str_trim_nl(passwd,MAX_PASS_LEN);
 
@@ -236,7 +239,7 @@ void * handle_client(void *arg){
         if(atoi(choice)==1){
             printf("\nUser(%s) Tries to Sign in....\n",client_address);
             if(sign_in(cli,name)==0){
-                //printf("Error Signing in\n");
+                printf("Error Signing in2\n");
                 send(cli->sockfd,"0",1,0);
                 leave_flag=1;
             }else
@@ -269,7 +272,7 @@ void * handle_client(void *arg){
             
         //wrong choice
         }else{
-            printf("\nError Bad Choice\n");
+            printf("\nWrong Choice from %s\n",client_address);
             leave_flag=1;
         }
 
@@ -417,7 +420,7 @@ int main(int argc, char *argv[])
         //Create Thread
         pthread_create(&tid,NULL,&handle_client,(void*)pclient);
 
-        //reduce CPU usage
+        //reduce CPU load
         sleep(1);
 
     }

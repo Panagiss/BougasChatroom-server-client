@@ -280,11 +280,12 @@ int sign_in(){
     //end ncurses lib
 
     //sending username and password back to server
+    //printf("DEBUG:%s\n",usrn);
     if(send(sockfd,usrn,MAX_NAME_LEN-1,0)<=0){
         fprintf(stderr,"Error sending Username\n");
         return 0;
     }
-    
+    //printf("DEBUG:%s\n",passwd);
     if(send(sockfd,passwd,MAX_PASS_LEN-1,0)<=0){
         fprintf(stderr,"Error sending Password\n");
         return 0;
@@ -322,7 +323,7 @@ int main(int argc, char *argv[])
         error("<!>ERROR opening socket");
     }
     
-    server = gethostbyname("10.0.2.15");
+    server = gethostbyname("79.131.234.186");
     
     if (server == NULL)
     {
