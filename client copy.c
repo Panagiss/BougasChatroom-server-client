@@ -8,7 +8,7 @@
 #include <netinet/in.h>
 #include <signal.h>
 #include <netdb.h>
-#define MAX_BUFF 10000
+#define MAX_BUFF 10000 
 
 void error(const char *msg)
 {

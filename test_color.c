@@ -15,6 +15,6 @@ int main(void) {
     refresh();
 
     //getch();
-
+ 
     endwin();
 }

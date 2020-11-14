@@ -323,7 +323,7 @@ int main(int argc, char *argv[])
         error("<!>ERROR opening socket");
     }
     
-    server = gethostbyname("79.131.234.186");
+    server = gethostbyname("127.0.0.1");
     
     if (server == NULL)
     {
