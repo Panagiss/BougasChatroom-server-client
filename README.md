@@ -25,5 +25,8 @@ The **second** one is that while a user writes something on terminal and hasn't 
 I don't have the time to continue this project which i have done for educational purposes. So no future updates i guess. Feel free to send me anything related and also i hope this code proves useful to you.
 
 ## Run-Images
-**From Server:** ![alt text](https://github.com/Panagiss/BougasChatroom-server-client/blob/master/sample-images/Screenshot%20from%202020-11-15%2013-00-15.png "Server")
-**From Client:** ![alt text](https://github.com/Panagiss/BougasChatroom-server-client/blob/master/sample-images/Screenshot%20from%202020-11-15%2013-00-23.png "Client")
+**From Server:** 
+![alt text](https://github.com/Panagiss/BougasChatroom-server-client/blob/master/sample-images/Screenshot%20from%202020-11-15%2013-00-15.png "Server")
+
+**From Client:** 
+![alt text](https://github.com/Panagiss/BougasChatroom-server-client/blob/master/sample-images/Screenshot%20from%202020-11-15%2013-00-23.png "Client")
