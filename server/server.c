@@ -106,7 +106,7 @@ int sign_up(client_node cli){
     send(cli->sockfd,"1",1,0); //send acceptance message to client
 
     pthread_mutex_lock(&mutex);
-    FILE *fp=fopen("server/.t_server_usrs","a");
+    FILE *fp=fopen(".t_server_usrs","a");
     pthread_mutex_unlock(&mutex);
     if(fp==NULL){
         printf("ERROR opening File\n");
@@ -175,7 +175,7 @@ int sign_in(client_node cli,char *name){
     }
 
     pthread_mutex_lock(&mutex);
-    if ((fp = fopen("server/.t_server_usrs", "r")) == NULL) {
+    if ((fp = fopen(".t_server_usrs", "r")) == NULL) {
         printf("Error! opening file");
         return 0;
     }
