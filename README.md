@@ -22,4 +22,8 @@ There are 2 big known bugs at the moment, **first** there is a bug preventing tw
 The **second** one is that while a user writes something on terminal and hasn't pressed enter to send and at that time another user sends a messsage, it disappears the text from the user and you may think your text has gone but actually if you hit enter all the text will be send correctly. So it's a visual bug and a small one. Lastly it's not a bug but worth mentioning, when a user writes his password it cannot hit backspace to erase it, and this happens cause password is written in another graphical ui via the *ncurses* library.
 
 ## From Owner
-I don't have the time to continue this project which i have done for educational purposes. So no future updates i guess. Feel free to send me anything related and also i hope it this code proves useful to you.
+I don't have the time to continue this project which i have done for educational purposes. So no future updates i guess. Feel free to send me anything related and also i hope this code proves useful to you.
+
+## Run-Images
+**From Server:** ![alt text](https://github.com/Panagiss/BougasChatroom-server-client/blob/master/sample-images/Screenshot%20from%202020-11-15%2013-00-15.png "Server")
+**From Client:** ![alt text](https://github.com/Panagiss/BougasChatroom-server-client/blob/master/sample-images/Screenshot%20from%202020-11-15%2013-00-23.png "Client")
